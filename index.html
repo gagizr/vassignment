@@ -1,0 +1,240 @@
+
+<html>
+
+<head>
+    <meta charset="utf-8">
+	<link rel="stylesheet" type="text/css" href="css/style.css">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chartist/0.11.0/chartist.min.css">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/react-bootstrap-table/4.3.1/react-bootstrap-table.min.css">
+</head>
+<body>	   
+    <script src="https://unpkg.com/react@16/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/react-bootstrap-table/4.3.1/react-bootstrap-table.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/chartist/0.11.0/chartist.min.js"></script>
+	
+    <div id="container"></div>
+	<script type="text/babel">
+	/***************************************************************************************
+	
+	 this class was adjusted from https://github.com/fraserxu/react-chartist
+	 
+	***************************************************************************************/
+	class ChartistGraph extends React.Component {
+
+	displayName: 'ChartistGraph'
+
+	componentWillReceiveProps(newProps) {
+    this.updateChart(newProps);
+  }
+
+  componentWillUnmount() {
+    if (this.chartist) {
+      try {
+        this.chartist.detach();
+      } catch (err) {
+        throw new Error('Internal chartist error', err);
+      }
+    }
+  }
+
+  componentDidMount() {
+    this.updateChart(this.props);
+  }
+
+  updateChart(config) {
+
+
+    let { type, data } = config;
+    let options = config.options || {};
+    let responsiveOptions = config.responsiveOptions || [];
+    let event;
+
+    if (this.chartist) {
+      this.chartist.update(data, options, responsiveOptions);
+    } else {
+      this.chartist = new Chartist[type](this.chart, data, options, responsiveOptions);
+
+      if (config.listener) {
+        for (event in config.listener) {
+          if (config.listener.hasOwnProperty(event)) {
+            this.chartist.on(event, config.listener[event]);
+          }
+        }
+      }
+    }
+
+    return this.chartist;
+  }
+
+  render() {
+    const { className, style, children, data, type } = this.props;
+    const childrenWithProps = children && Children.map(children, (child) => (
+      cloneElement(child, {
+        type,
+        data
+      })
+    ));
+    return (
+      <div className={`ct-chart ${className || ''}`} ref={(ref) => this.chart = ref } style={style}>
+         {childrenWithProps}
+      </div>
+    )
+  }
+}	</script>
+	
+	
+	<script type="text/babel">
+	
+	
+	
+	class VaTest extends React.Component {
+	constructor(props) {
+  	super(props);
+ 		 this.state={items:[],
+		 symbol: "MSFT",
+		 link: "https://www.alphavantage.co/query?apikey=1NVTQL015YI19SUA&function=TIME_SERIES_DAILY_ADJUSTED&symbol=" ,
+		 isTable: true,
+		 fetched: false
+		 };
+		  }
+  
+  //handle events
+  
+  handleKeyPress = (event) => {
+  if(event.key == 'Enter'){
+		if (event.target.value != '')
+		this.setState({symbol: event.target.value}, function () {
+			this.fetchJson();
+		});
+  }
+ }
+
+  handleTable = (event) => {this.setState({isTable: true})}
+  handleGraph = (event) => {this.setState({isTable: false})}
+   
+   
+   list() {
+    var keys = Object.keys(this.state.items);
+	var dates = this.state.items[keys[1]];
+	var fullData = [];
+	for (var date in dates){
+		var internalArray =[];
+		Object.assign(dates[date], {"date": date});
+		fullData.push(dates[date]);
+	}
+	return (fullData);
+
+	
+	}
+	
+	myMeta() {
+	console.log("called mymeta()");
+	console.log(this.state.items);
+	if	(this.state.items.length > 0){
+	  var metaKeys = this.state.items["Meta Data"];
+	  console.log("in myMeta(), metaKeys: " + metaKeys);
+	  return (
+	  <ul><li>Information: {metaKeys["1. Information"]}</li>
+	  <li>Symbol: {metaKeys["2. Symbol"]}</li>
+	  <li>Last Refreshed: {metaKeys["3. Last Refreshed"]}</li>
+	  <li>Time Zone: {metaKeys["5. Time Zone"]}</li></ul> 
+	  );
+	  }} 
+	  
+	
+   fetchJson(){
+    fetch(this.state.link + this.state.symbol)
+		.then(result=>result.json())
+		.then(items=>this.setState({items}))
+		.then(this.setState({fetched: true}));
+	
+   }
+   
+  ComponentWillUnmount() {
+    this.setState({fetched: false});
+  }
+  
+  componentDidMount(){
+	this.fetchJson();
+  }
+  render() {
+			 var arrayDates = [];
+			 var simpleLineChartData ={};
+			 if (this.state.items.length != 0 && this.state.items['Time Series (Daily)'] !== undefined){
+				arrayDates = Object.keys(this.state.items['Time Series (Daily)']);
+			 
+				simpleLineChartData = {
+				lables: Object.keys(this.state.items['Time Series (Daily)']),
+				series: [arrayDates.map(opendate => ((this.state.items['Time Series (Daily)'])[opendate])['1. open']),
+						 arrayDates.map(opendate => ((this.state.items['Time Series (Daily)'])[opendate])['2. high']),
+						 arrayDates.map(opendate => ((this.state.items['Time Series (Daily)'])[opendate])['3. low'])]
+			 }
+			 var lineChartOptions = {
+			  showArea: false
+			}
+			 }
+				return(
+					<div>
+						<div className="sticky-top" >
+							<div className="header">
+								<img src="images/logo.png" align="left"/>
+								<div className="header-right">
+									<input id="SI" type="text" maxLength='300px' defaultValue="MSFT" onKeyPress={this.handleKeyPress} />
+								</div>
+							</div>
+						</div>
+						<nav className="sidenav">
+						 <ul className="navbar-nav">
+							<li className="nav-item" onClick={this.handleTable}>
+							  <a className="nav-link" href="#" >Table</a>
+							</li>
+							<li className="nav-item" onClick={this.handleGraph}>
+							  <a className="nav-link" href="#">Graph</a>
+							</li>
+							</ul>
+						</nav>
+						{this.state.items["Meta Data"]!== undefined ?
+						<div className="showData">
+							<div className="metaList">
+							<ul className="metaList">
+							<li align="left"><b>Information:</b> {this.state.items.length == 0  ? "no data" : (this.state.items["Meta Data"])["1. Information"] }</li>
+							<li align="left"><b>Symbol:</b> {this.state.items.length == 0  ? "no data" :(this.state.items["Meta Data"])["2. Symbol"]}</li>
+							<li align="left"><b>Last Refreshed:</b> {this.state.items.length == 0  ? "no data" :(this.state.items["Meta Data"])["3. Last Refreshed"]}</li>
+							<li align="left"><b>Time Zone:</b> {this.state.items.length == 0  ? "no data" : (this.state.items["Meta Data"])["5. Time Zone"]}</li>
+							</ul>
+							</div>
+							{this.state.isTable ?
+							<div className="dataTable">
+							 <BootstrapTable data={this.list()}>
+							  <TableHeaderColumn dataField="date" isKey={true}>Date</TableHeaderColumn>
+							  <TableHeaderColumn dataField="1. open">Open</TableHeaderColumn>
+							  <TableHeaderColumn dataField="2. high">High</TableHeaderColumn>
+							  <TableHeaderColumn dataField="3. low">Low</TableHeaderColumn>
+							  <TableHeaderColumn dataField="4. close">Close</TableHeaderColumn>
+							  <TableHeaderColumn dataField="5. adjusted close">Adjusted Close</TableHeaderColumn>
+							  <TableHeaderColumn dataField="6. volume">Volume</TableHeaderColumn>
+							  <TableHeaderColumn dataField="7. dividend amount">Dividend Amount</TableHeaderColumn>
+							  <TableHeaderColumn dataField="8. split coefficient">Split Coefficient</TableHeaderColumn>
+							</BootstrapTable>
+							</div> :
+							<div className="dataChart">
+							<ChartistGraph data={simpleLineChartData} options={lineChartOptions} type={'Line'} />		  
+							</div>}
+					  </div>
+					  : <div className="showData"><a>{this.state.items["Error Message"]!== undefined ? this.state.items["Error Message"]:this.state.items.Note }</a></div>}
+					</div>
+
+				   )
+				  }
+				 }
+	
+			ReactDOM.render(
+		  <VaTest />,
+		  document.getElementById('container')
+		);
+		</script> 	  
+	</body>
+</html>
